@@ -1,0 +1,29 @@
+language: go
+
+go: "1.11"
+
+env:
+  global:
+    - VERSION=$(cat VERSION)
+
+before_script:
+  - go get
+
+script:
+  - go test
+
+before_deploy:
+  - mkdir -p release
+  - "GOOS=linux  GOARCH=amd64 go build -o release/auas-cli_$VERSION_linux_amd64"
+  - "GOOS=darwin GOARCH=amd64 go build -o release/auas-cli_$VERSION_darwin_amd64"
+
+deploy:
+  provider: releases
+  api_key: ${API_KEY}
+  skip_cleanup: true
+  file:
+    - "release/auas-cli_$VERSION_linux_amd64"
+    - "release/auas-cli_$VERSION_darwin_amd64"
+  on:
+    repo: filkra/auas-cli
+    tags: true
