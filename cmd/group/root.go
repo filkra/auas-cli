@@ -17,4 +17,6 @@ var RootCommand = &cobra.Command{
 
 func init() {
 	RootCommand.AddCommand(groupAddCommand)
+	RootCommand.AddCommand(groupDeleteCommand)
+	RootCommand.AddCommand(groupListCommand)
 }

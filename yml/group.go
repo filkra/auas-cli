@@ -20,7 +20,7 @@ type ExerciseGroupImport struct {
 	Groups []ExerciseGroup `yaml:"groups"`
 }
 
-func ReadGroup(reader io.Reader) (ExerciseGroupImport, error)  {
+func ReadGroups(reader io.Reader) (ExerciseGroupImport, error)  {
 	var groupImport ExerciseGroupImport
 
 	// Read all bytes from the provided Reader

@@ -15,18 +15,6 @@ var groupAddCommand = &cobra.Command{
 	SilenceErrors: true,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// Get the username
-		user, present := os.LookupEnv("AUAS_USER")
-		if present == false {
-			log.Fatal("Please specify a username within the environment variable AUAS_USER")
-		}
-
-		// Get the password
-		password, present := os.LookupEnv("AUAS_PASS")
-		if present == false {
-			log.Fatal("Please specify a password within the environment variable AUAS_PASS")
-		}
-
 		// Create a new API client
 		client, err := api.NewClient(nil)
 		if err != nil {
@@ -40,17 +28,11 @@ var groupAddCommand = &cobra.Command{
 		}
 
 		// Parse the file
-		groups, err := yml.ReadGroup(file)
+		groups, err := yml.ReadGroups(file)
 		if err != nil {
 			log.Fatal(err)
 		}
 		file.Close()
-
-		// Login using the client
-		err = client.Login(user, password)
-		if err != nil {
-			log.Fatal(err)
-		}
 
 		// Import all groups using the client
 		err = client.ImportGroups(groups)

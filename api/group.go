@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -21,8 +22,11 @@ const (
 )
 
 const (
+	CourseShowURL			string = "course/show"
 	GroupCreateURL 			string = "exercisegroup/create"
+	GroupDeleteURL			string = "exercisegroup/delete"
 	EditModeSave 			string = "save"
+	EditModeDelete			string = "delete"
 )
 
 type CourseInformation struct {
@@ -65,6 +69,59 @@ func (c *Client) ImportGroups(groupImport yml.ExerciseGroupImport) error {
 			FormParamEditMode : {EditModeSave},
 		})
 
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) GetGroups(courseId string) ([]string, error) {
+	// Create the request URL
+	u, err := c.BaseURL.Parse(CourseShowURL + "/" + courseId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve the HTML source
+	resp, err := soup.GetWithClient(u.String(), c.httpClient)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the HTML source
+	doc := soup.HTMLParse(resp)
+
+	// Find all tutors with their corresponding values and store them within a map
+	links := doc.FindAll("a", "class", "icon-cup")
+
+
+
+	var groups []string
+	for _, link := range links {
+		href := link.Attrs()["href"]
+		if strings.Contains(href, GroupDeleteURL) {
+			split := strings.Split(href, "/")
+			groups = append(groups, split[len(split) - 1])
+		}
+	}
+
+	return groups, nil
+}
+
+func (c *Client) DeleteGroups(groupIds []string) error {
+	for _, groupId := range groupIds {
+		// Create the request URL
+		u, err := c.BaseURL.Parse(GroupDeleteURL + "/" + groupId)
+		if err != nil {
+			return err
+		}
+
+		// Send a POST request to delete the specified group
+		_, err = c.httpClient.PostForm(u.String(), url.Values {
+			FormParamEditMode : {EditModeDelete},
+		})
 		if err != nil {
 			return err
 		}
