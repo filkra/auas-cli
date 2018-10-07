@@ -5,6 +5,8 @@ import (
 	"github.com/filkra/auas-cli/api"
 	"github.com/spf13/cobra"
 	"log"
+	"os"
+	"text/tabwriter"
 )
 
 var groupListCommand = &cobra.Command{
@@ -25,6 +27,39 @@ var groupListCommand = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Println(groups)
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+		fmt.Fprintln(w, getTableHeader())
+		for _, row := range groups {
+			fmt.Fprintln(w, rowToString(&row))
+		}
+
+		w.Flush()
 	},
+}
+
+func rowToString(information *api.GroupInformation) string {
+	return fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+		information.Id,
+		information.Name,
+		information.Room,
+		information.Day,
+		information.Time,
+		information.Tutor,
+		information.Participants,
+		information.Space,
+	)
+}
+
+func getTableHeader() string {
+	return fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+		"Id",
+		"Name",
+		"Raum",
+		"Wochentag",
+		"Uhrzeit",
+		"Tutor",
+		"Teilnehmer",
+		"Plätze",
+	)
 }

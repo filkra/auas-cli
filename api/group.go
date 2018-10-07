@@ -35,14 +35,21 @@ const (
 )
 
 type CourseInformation struct {
-	CourseName string
-	CourseFormId uint32
+	Name   string
+	FormId uint32
 	Tutors Tutors
 }
 
 type GroupInformation struct {
-	GroupName string
-	GroupId string
+	Name         string
+	Room         string
+	Day          string
+	Time         string
+	Tutor        string
+	Participants string
+	Space        string
+	Id           string
+
 }
 
 type Tutors map[string]uint32
@@ -71,7 +78,7 @@ func (c *Client) ImportGroups(groupImport yml.ExerciseGroupImport) error {
 		_, err := c.httpClient.PostForm(u.String(), url.Values {
 			FormParamGroupName : {group.Name},
 			FormParamTutor : {fmt.Sprint(info.Tutors[group.Tutor])},
-			FormParamCourse : {fmt.Sprint(info.CourseFormId)},
+			FormParamCourse : {fmt.Sprint(info.FormId)},
 			FormParamDay : {group.Day},
 			FormParamTime : {group.Time},
 			FormParamRoom : {group.Room},
@@ -118,7 +125,7 @@ func (c *Client) UpdateGroups(groupImport yml.ExerciseGroupImport) error {
 		_, err = c.httpClient.PostForm(u.String(), url.Values {
 			FormParamGroupName : {group.Name},
 			FormParamTutor : {fmt.Sprint(info.Tutors[group.Tutor])},
-			FormParamCourse : {fmt.Sprint(info.CourseFormId)},
+			FormParamCourse : {fmt.Sprint(info.FormId)},
 			FormParamDay : {group.Day},
 			FormParamTime : {group.Time},
 			FormParamRoom : {group.Room},
@@ -163,7 +170,7 @@ func (c *Client) GetGroups(courseId string) ([]GroupInformation, error) {
 func (c *Client) DeleteGroups(groupIds []GroupInformation) error {
 	for _, group := range groupIds {
 		// Create the request URL
-		u, err := c.BaseURL.Parse(GroupDeleteURL + "/" + group.GroupId)
+		u, err := c.BaseURL.Parse(GroupDeleteURL + "/" + group.Id)
 		if err != nil {
 			return err
 		}
@@ -214,8 +221,8 @@ func (c *Client) GetCourseInformation(courseId string) (CourseInformation, error
 	}
 
 	// Store the course's name and value
-	info.CourseFormId = uint32(option)
-	info.CourseName = options[1].Text()
+	info.FormId = uint32(option)
+	info.Name = options[1].Text()
 
 	return info, nil
 }
@@ -245,7 +252,15 @@ func readGroups(table *soup.Root) []GroupInformation {
 	var groups []GroupInformation
 	rows := table.Find("tbody").FindAll("tr")
 	for _, row := range rows {
-		group := GroupInformation{GroupName: row.Children()[0].Text(), GroupId: readGroupId(&row)}
+		group := GroupInformation{
+			Name: row.Children()[0].Text(),
+			Room: row.Children()[1].Text(),
+			Day: row.Children()[2].Text(),
+			Time: row.Children()[3].Text(),
+			Tutor: row.Children()[4].Text(),
+			Participants: row.Children()[5].Text(),
+			Space: row.Children()[6].Text(),
+			Id: readGroupId(&row)}
 		groups = append(groups, group)
 	}
 	return groups
@@ -261,7 +276,7 @@ func readGroupId(row *soup.Root) string {
 func createGroupMapping(groupInfo []GroupInformation) map[string]string {
 	mapping := map[string]string{}
 	for _, info := range groupInfo {
-		mapping[info.GroupName] = info.GroupId
+		mapping[info.Name] = info.Id
 	}
 	return mapping
 }
