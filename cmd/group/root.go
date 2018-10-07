@@ -19,4 +19,5 @@ func init() {
 	RootCommand.AddCommand(groupAddCommand)
 	RootCommand.AddCommand(groupDeleteCommand)
 	RootCommand.AddCommand(groupListCommand)
+	RootCommand.AddCommand(groupUpdateCommand)
 }

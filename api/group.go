@@ -24,15 +24,25 @@ const (
 const (
 	CourseShowURL			string = "course/show"
 	GroupCreateURL 			string = "exercisegroup/create"
+	GroupEditURL			string = "exercisegroup/edit"
 	GroupDeleteURL			string = "exercisegroup/delete"
 	EditModeSave 			string = "save"
 	EditModeDelete			string = "delete"
+)
+
+const (
+	GroupTableTitle			string = "Übungsgruppen"
 )
 
 type CourseInformation struct {
 	CourseName string
 	CourseFormId uint32
 	Tutors Tutors
+}
+
+type GroupInformation struct {
+	GroupName string
+	GroupId string
 }
 
 type Tutors map[string]uint32
@@ -77,7 +87,54 @@ func (c *Client) ImportGroups(groupImport yml.ExerciseGroupImport) error {
 	return nil
 }
 
-func (c *Client) GetGroups(courseId string) ([]string, error) {
+func (c *Client) UpdateGroups(groupImport yml.ExerciseGroupImport) error {
+	// Retrieve course information
+	info, err := c.GetCourseInformation(groupImport.CourseId)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Check if the specified tutors exist
+	err = validateTutors(groupImport.Groups, info.Tutors)
+	if err != nil {
+		return err
+	}
+
+	groupInfo, err := c.GetGroups(groupImport.CourseId)
+	if err != nil {
+		return err
+	}
+
+	groupMapping := createGroupMapping(groupInfo)
+
+	// Send a POST request for each group to create it
+	for _, group := range groupImport.Groups {
+		// Create the request URL
+		u, err := c.BaseURL.Parse(GroupEditURL + "/" + groupMapping[group.Name])
+		if err != nil {
+			return err
+		}
+
+		_, err = c.httpClient.PostForm(u.String(), url.Values {
+			FormParamGroupName : {group.Name},
+			FormParamTutor : {fmt.Sprint(info.Tutors[group.Tutor])},
+			FormParamCourse : {fmt.Sprint(info.CourseFormId)},
+			FormParamDay : {group.Day},
+			FormParamTime : {group.Time},
+			FormParamRoom : {group.Room},
+			FormParamParticipants : {fmt.Sprint(group.Participants)},
+			FormParamEditMode : {EditModeSave},
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) GetGroups(courseId string) ([]GroupInformation, error) {
 	// Create the request URL
 	u, err := c.BaseURL.Parse(CourseShowURL + "/" + courseId)
 	if err != nil {
@@ -93,27 +150,20 @@ func (c *Client) GetGroups(courseId string) ([]string, error) {
 	// Parse the HTML source
 	doc := soup.HTMLParse(resp)
 
-	// Find all tutors with their corresponding values and store them within a map
-	links := doc.FindAll("a", "class", "icon-cup")
-
-
-
-	var groups []string
-	for _, link := range links {
-		href := link.Attrs()["href"]
-		if strings.Contains(href, GroupDeleteURL) {
-			split := strings.Split(href, "/")
-			groups = append(groups, split[len(split) - 1])
-		}
+	table := findGroupTable(&doc)
+	if table == nil {
+		return nil, nil
 	}
+
+	groups := readGroups(table)
 
 	return groups, nil
 }
 
-func (c *Client) DeleteGroups(groupIds []string) error {
-	for _, groupId := range groupIds {
+func (c *Client) DeleteGroups(groupIds []GroupInformation) error {
+	for _, group := range groupIds {
 		// Create the request URL
-		u, err := c.BaseURL.Parse(GroupDeleteURL + "/" + groupId)
+		u, err := c.BaseURL.Parse(GroupDeleteURL + "/" + group.GroupId)
 		if err != nil {
 			return err
 		}
@@ -179,4 +229,39 @@ func validateTutors(groups []yml.ExerciseGroup, tutors Tutors) error {
 	}
 
 	return nil
+}
+
+func findGroupTable(root *soup.Root) *soup.Root {
+	tables := root.FindAll("table", "class", "tablesorter")
+	for _, table := range tables {
+		if table.FindPrevSibling().Text() == GroupTableTitle {
+			return &table
+		}
+	}
+	return nil
+}
+
+func readGroups(table *soup.Root) []GroupInformation {
+	var groups []GroupInformation
+	rows := table.Find("tbody").FindAll("tr")
+	for _, row := range rows {
+		group := GroupInformation{GroupName: row.Children()[0].Text(), GroupId: readGroupId(&row)}
+		groups = append(groups, group)
+	}
+	return groups
+}
+
+func readGroupId(row *soup.Root) string {
+	link := row.Find("a", "class", "icon-cup")
+	href := link.Attrs()["href"]
+	split := strings.Split(href, "/")
+	return split[len(split) - 1]
+}
+
+func createGroupMapping(groupInfo []GroupInformation) map[string]string {
+	mapping := map[string]string{}
+	for _, info := range groupInfo {
+		mapping[info.GroupName] = info.GroupId
+	}
+	return mapping
 }
