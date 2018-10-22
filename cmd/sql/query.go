@@ -26,8 +26,15 @@ var sqlQueryCommand = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		fi, err := os.Stdin.Stat()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// Print prompt
-		fmt.Print(Prompt)
+		if (fi.Mode() & os.ModeCharDevice) != 0 {
+			fmt.Print(Prompt)
+		}
 
 		// Read all lines until user types in ';'
 		reader := bufio.NewReader(os.Stdin)
