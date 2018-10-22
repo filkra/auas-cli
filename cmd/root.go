@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/filkra/auas-cli/cmd/group"
+	"github.com/filkra/auas-cli/cmd/sql"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -18,6 +19,7 @@ var rootCommand = &cobra.Command{
 
 func init() {
 	rootCommand.AddCommand(group.RootCommand)
+	rootCommand.AddCommand(sql.RootCommand)
 }
 
 func Execute() {
