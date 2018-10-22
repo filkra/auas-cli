@@ -18,7 +18,7 @@ var sqlQueryCommand = &cobra.Command{
 	Use:   "query",
 	Short: "Performs a raw SQL query using stdin",
 	SilenceErrors: true,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Create a new SQL client
 		client, err := sql.NewClient(nil)
