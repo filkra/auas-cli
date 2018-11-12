@@ -6,7 +6,6 @@ env:
   global:
     - LINUX_BINARY=release/auas-cli-${TRAVIS_TAG}-linux-amd64
     - DARWIN_BINARY=release/auas-cli-${TRAVIS_TAG}-darwin-amd64
-    - WINDOWS_BINARY=release/auas-cli-${TRAVIS_TAG}-windows-amd64
 
 before_script:
   - go get
@@ -18,7 +17,6 @@ before_deploy:
   - mkdir -p release
   - "GOOS=linux  GOARCH=amd64 go build -o ${LINUX_BINARY}"
   - "GOOS=darwin GOARCH=amd64 go build -o ${DARWIN_BINARY}"
-  - "GOOS=windows GOARCH=amd64 go build -o ${WINDOWS_BINARY}"
 
 deploy:
   provider: releases
@@ -27,7 +25,6 @@ deploy:
   file:
     - "${LINUX_BINARY}"
     - "${DARWIN_BINARY}"
-    - "${WINDOWS_BINARY}"
   on:
     repo: filkra/auas-cli
     tags: true
